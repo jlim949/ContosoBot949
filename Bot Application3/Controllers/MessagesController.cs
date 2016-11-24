@@ -40,7 +40,7 @@ namespace Bot_Application3
                 {
                     userData.SetProperty<bool>("PreviousUser", true);
                     await stateClient.BotState.SetUserDataAsync(activity.ChannelId, activity.From.Id, userData);
-                    Activity greet = activity.CreateReply("Hello " + activity.From.Name + ", I see that you haven't talked to us before. Welcome!");
+                    Activity greet = activity.CreateReply("Hello " + activity.From.Name + ", I don't think you've talked to us before. Welcome!");
                     await connector.Conversations.ReplyToActivityAsync(greet);
                     helpFound = true;
                 }
@@ -112,7 +112,7 @@ namespace Bot_Application3
                             await AzureManager.AzureManagerInstance.UpdateTimeline(account);
                             endOutput = "Your balance was successfully updated. Do you wish to view your account?";
 
-                            Activity ynReply = activity.CreateReply($"View account?");
+                            Activity ynReply = activity.CreateReply($"");
                             ynReply.Recipient = activity.From;
                             ynReply.Type = "message";
                             ynReply.Attachments = new List<Attachment>();
@@ -133,6 +133,7 @@ namespace Bot_Application3
                             ynbuttons.Add(noButton);
                             HeroCard conversionCard = new HeroCard()
                             {
+                                Title = "View account?",
                                 Buttons = ynbuttons
                             };
                             Attachment plAttachment = conversionCard.ToAttachment();
@@ -140,6 +141,104 @@ namespace Bot_Application3
                             await connector.Conversations.ReplyToActivityAsync(ynReply);
 
 
+                        }
+                    }
+
+                    isCurrencyRequest = false;
+                }
+
+                if (userMessage.ToLower().Contains("deposit"))
+                {
+                    List<ContosoTable949> timelines = await AzureManager.AzureManagerInstance.GetTimelines();
+                    string[] inputs = userMessage.Split(' ');
+                    string newBalance = inputs[2];
+                    double doubleBalance = Convert.ToDouble(newBalance);
+                    endOutput = "Sorry, there is no account under that name.";
+                    foreach (ContosoTable949 account in timelines)
+                    {
+                        if (inputs[1].ToLower() == account.Name.ToLower())
+                        {
+                            account.Balance = account.Balance + doubleBalance;
+                            await AzureManager.AzureManagerInstance.UpdateTimeline(account);
+                            endOutput = "Your balance was successfully updated. Do you wish to view your account?";
+
+                            Activity ynReply = activity.CreateReply($"");
+                            ynReply.Recipient = activity.From;
+                            ynReply.Type = "message";
+                            ynReply.Attachments = new List<Attachment>();
+                            List<CardAction> ynbuttons = new List<CardAction>();
+                            CardAction yesButton = new CardAction()
+                            {
+                                Value = "get " + inputs[1],
+                                Type = "imBack",
+                                Title = "Yes"
+                            };
+                            ynbuttons.Add(yesButton);
+                            CardAction noButton = new CardAction()
+                            {
+                                Value = "Bye",
+                                Type = "imBack",
+                                Title = "No"
+                            };
+                            ynbuttons.Add(noButton);
+                            HeroCard conversionCard = new HeroCard()
+                            {
+                                Title = "View account?",
+                                Buttons = ynbuttons
+                            };
+                            Attachment plAttachment = conversionCard.ToAttachment();
+                            ynReply.Attachments.Add(plAttachment);
+                            await connector.Conversations.ReplyToActivityAsync(ynReply);
+
+
+                        }
+                    }
+
+                    isCurrencyRequest = false;
+                }
+
+                if (userMessage.ToLower().Contains("withdraw"))
+                {
+                    List<ContosoTable949> timelines = await AzureManager.AzureManagerInstance.GetTimelines();
+                    string[] inputs = userMessage.Split(' ');
+                    string newBalance = inputs[2];
+                    double doubleBalance = Convert.ToDouble(newBalance);
+                    endOutput = "Sorry, there is no account under that name.";
+                    foreach (ContosoTable949 account in timelines)
+                    {
+                        if (inputs[1].ToLower() == account.Name.ToLower())
+                        {
+                            account.Balance = account.Balance - doubleBalance;
+                            await AzureManager.AzureManagerInstance.UpdateTimeline(account);
+                            endOutput = "Your balance was successfully updated. Do you wish to view your account?";
+
+                            Activity ynReply = activity.CreateReply($"");
+                            ynReply.Recipient = activity.From;
+                            ynReply.Type = "message";
+                            ynReply.Attachments = new List<Attachment>();
+                            List<CardAction> ynbuttons = new List<CardAction>();
+                            CardAction yesButton = new CardAction()
+                            {
+                                Value = "get " + inputs[1],
+                                Type = "imBack",
+                                Title = "Yes"
+                            };
+                            ynbuttons.Add(yesButton);
+                            CardAction noButton = new CardAction()
+                            {
+                                Value = "Bye",
+                                Type = "imBack",
+                                Title = "No"
+                            };
+                            ynbuttons.Add(noButton);
+                            HeroCard conversionCard = new HeroCard()
+                            {
+                                Title = "View account?",
+                                Buttons = ynbuttons
+                            };
+                            Attachment plAttachment = conversionCard.ToAttachment();
+                            ynReply.Attachments.Add(plAttachment);
+                            await connector.Conversations.ReplyToActivityAsync(ynReply);
                         }
                     }
 
@@ -182,7 +281,7 @@ namespace Bot_Application3
                 }
                 if (userMessage.ToLower().Equals("account"))
                 {
-                    endOutput = "Type: *New/Get/Delete Your Name* to create/view/delete your account. You can also type *Update balance Your Name* to update your balance. EXAMPLE. New James, Update balance Sam, etc";
+                    endOutput = "Type: *New/Get/Delete Your Name* to create/view/delete your account. You can also type *Update balance*, *Deposit* or *Withdraw* followed by your name and amount of money to update your balance. EXAMPLE. New James, Update balance Sam 500, etc";
                     isCurrencyRequest = false;
                 }
                 if (userMessage.ToLower().Contains("new"))
@@ -197,6 +296,34 @@ namespace Bot_Application3
 
                     await AzureManager.AzureManagerInstance.AddTimeline(timeline);
 
+                    Activity ynReply = activity.CreateReply($"");
+                    ynReply.Recipient = activity.From;
+                    ynReply.Type = "message";
+                    ynReply.Attachments = new List<Attachment>();
+                    List<CardAction> ynbuttons = new List<CardAction>();
+                    CardAction yesButton = new CardAction()
+                    {
+                        Value = "get " + userName,
+                        Type = "imBack",
+                        Title = "Yes"
+                    };
+                    ynbuttons.Add(yesButton);
+                    CardAction noButton = new CardAction()
+                    {
+                        Value = "Help",
+                        Type = "imBack",
+                        Title = "No"
+                    };
+                    ynbuttons.Add(noButton);
+                    HeroCard conversionCard = new HeroCard()
+                    {
+                        Title = "View account?",
+                        Buttons = ynbuttons
+                    };
+                    Attachment plAttachment = conversionCard.ToAttachment();
+                    ynReply.Attachments.Add(plAttachment);
+                    await connector.Conversations.ReplyToActivityAsync(ynReply);
+
                     isCurrencyRequest = false;
 
                     endOutput = "Thanks " + userName + ", you now have a Contoso Bank account!";
@@ -204,7 +331,7 @@ namespace Bot_Application3
 
                 if (userMessage.ToLower().Equals("bye"))
                 {
-                    endOutput = "Thanks for using this bot! You can continue to use it anytime you wish.";
+                    endOutput = "Thanks for using this bot! Feel free to talk to us again anytime you wish.";
                     isCurrencyRequest = false;
                 }
                 if (userMessage.ToLower().Contains("from"))
@@ -238,32 +365,32 @@ namespace Bot_Application3
                     await connector.Conversations.ReplyToActivityAsync(reply);
 
                 }
-                if (userMessage.ToLower().Equals("contoso"))
+                if (userMessage.ToLower().Contains("contoso"))
                 {
-                    Activity replyToConversation = activity.CreateReply("Contoso Bank information");
-                    replyToConversation.Recipient = activity.From;
-                    replyToConversation.Type = "message";
-                    replyToConversation.Attachments = new List<Attachment>();
+                    Activity contosoReply = activity.CreateReply("Contoso Bank information");
+                    contosoReply.Recipient = activity.From;
+                    contosoReply.Type = "message";
+                    contosoReply.Attachments = new List<Attachment>();
                     List<CardImage> cardImages = new List<CardImage>();
                     cardImages.Add(new CardImage(url: "https://s14.postimg.org/9znwwgaw1/Contoso_Logo.png"));
                     List<CardAction> cardButtons = new List<CardAction>();
-                    CardAction plButton = new CardAction()
+                    CardAction contosoButton = new CardAction()
                     {
                         Value = "https://www.asb.co.nz",
                         Type = "openUrl",
                         Title = "Click here!"
                     };
-                    cardButtons.Add(plButton);
-                    ThumbnailCard plCard = new ThumbnailCard()
+                    cardButtons.Add(contosoButton);
+                    ThumbnailCard contosoCard = new ThumbnailCard()
                     {
                         Title = "Contoso Bank",
                         Subtitle = "Want to find out more?",
                         Images = cardImages,
                         Buttons = cardButtons
                     };
-                    Attachment plAttachment = plCard.ToAttachment();
-                    replyToConversation.Attachments.Add(plAttachment);
-                    await connector.Conversations.SendToConversationAsync(replyToConversation);
+                    Attachment plAttachment = contosoCard.ToAttachment();
+                    contosoReply.Attachments.Add(plAttachment);
+                    await connector.Conversations.SendToConversationAsync(contosoReply);
 
                     return Request.CreateResponse(HttpStatusCode.OK);
 
