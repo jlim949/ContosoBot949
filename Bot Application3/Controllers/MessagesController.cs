@@ -85,9 +85,16 @@ namespace Bot_Application3
 
                 if (convertFound == true)
                 {
-                    endOutput = "This bot will give you an exchange rate from any currency into NZD. Please type what currency you would like to convert FROM. eg.From AUD";
+                    endOutput = "This bot will give you an exchange rate from any currency into NZD. Please type what currency you would like to convert FROM. eg. From AUD";
 
                     isCurrencyRequest = false;
+                }
+
+                if (userMessage.ToLower().Contains("clear"))
+                {
+                    endOutput = "Your data has been cleared. Thanks " + activity.From.Name;
+                    await stateClient.BotState.DeleteStateForUserAsync(activity.ChannelId, activity.From.Id);
+                    helpFound = false;
                 }
 
                 if (userMessage.ToLower().Contains("update balance"))
@@ -103,7 +110,35 @@ namespace Bot_Application3
                         {
                             account.Balance = doubleBalance;
                             await AzureManager.AzureManagerInstance.UpdateTimeline(account);
-                            endOutput = "Your balance was successfully updated.";
+                            endOutput = "Your balance was successfully updated. Do you wish to view your account?";
+
+                            Activity ynReply = activity.CreateReply($"View account?");
+                            ynReply.Recipient = activity.From;
+                            ynReply.Type = "message";
+                            ynReply.Attachments = new List<Attachment>();
+                            List<CardAction> ynbuttons = new List<CardAction>();
+                            CardAction yesButton = new CardAction()
+                            {
+                                Value = "get " + inputs[2],
+                                Type = "imBack",
+                                Title = "Yes"
+                            };
+                            ynbuttons.Add(yesButton);
+                            CardAction noButton = new CardAction()
+                            {
+                                Value = "Bye",
+                                Type = "imBack",
+                                Title = "No"
+                            };
+                            ynbuttons.Add(noButton);
+                            HeroCard conversionCard = new HeroCard()
+                            {
+                                Buttons = ynbuttons
+                            };
+                            Attachment plAttachment = conversionCard.ToAttachment();
+                            ynReply.Attachments.Add(plAttachment);
+                            await connector.Conversations.ReplyToActivityAsync(ynReply);
+
 
                         }
                     }
@@ -116,11 +151,11 @@ namespace Bot_Application3
                     List<ContosoTable949> timelines = await AzureManager.AzureManagerInstance.GetTimelines();
                     string userName = userMessage.Substring(7);
                     endOutput = "Sorry, there is no account under that name.";
-                    foreach (ContosoTable949 account in timelines)
+                    foreach (ContosoTable949 row in timelines)
                     {
-                        if (userName.ToLower() == account.Name.ToLower())
+                        if (userName.ToLower() == row.Name.ToLower())
                         {
-                            await AzureManager.AzureManagerInstance.DeleteTimeline(account);
+                            await AzureManager.AzureManagerInstance.DeleteTimeline(row);
                             endOutput = "Your account was successfully deleted.";
 
                         }
@@ -147,7 +182,7 @@ namespace Bot_Application3
                 }
                 if (userMessage.ToLower().Equals("account"))
                 {
-                    endOutput = "Type: New/Get/Delete *Your Name* to create/view/delete your account. You can also type Update balance *Your Name* to update your balance. EXAMPLE. New James, Update balance Sam, etc";
+                    endOutput = "Type: *New/Get/Delete Your Name* to create/view/delete your account. You can also type *Update balance Your Name* to update your balance. EXAMPLE. New James, Update balance Sam, etc";
                     isCurrencyRequest = false;
                 }
                 if (userMessage.ToLower().Contains("new"))
@@ -167,6 +202,11 @@ namespace Bot_Application3
                     endOutput = "Thanks " + userName + ", you now have a Contoso Bank account!";
                 }
 
+                if (userMessage.ToLower().Equals("bye"))
+                {
+                    endOutput = "Thanks for using this bot! You can continue to use it anytime you wish.";
+                    isCurrencyRequest = false;
+                }
                 if (userMessage.ToLower().Contains("from"))
                 {
                     source = userMessage.Substring(5);
@@ -209,7 +249,7 @@ namespace Bot_Application3
                     List<CardAction> cardButtons = new List<CardAction>();
                     CardAction plButton = new CardAction()
                     {
-                        Value = "http://msa.ms",
+                        Value = "https://www.asb.co.nz",
                         Type = "openUrl",
                         Title = "Click here!"
                     };
