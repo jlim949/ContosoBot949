@@ -51,5 +51,9 @@ namespace Bot_Application3
         {
             await this.timelineTable.UpdateAsync(timeline);
         }
+        public async Task DeleteTimeline(ContosoTable949 timeline)
+        {
+            await this.timelineTable.DeleteAsync(timeline);
+        }
     }
 }

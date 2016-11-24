@@ -31,24 +31,18 @@ namespace Bot_Application3
             if (activity.Type == ActivityTypes.Message)
             {
                 ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
-                string StockRateString;
 
                 StateClient stateClient = activity.GetStateClient();
                 BotData userData = await stateClient.BotState.GetUserDataAsync(activity.ChannelId, activity.From.Id);
 
-                string greeting = "Hello";
-
                 // calculate something for us to return
-                if (userData.GetProperty<bool>("PreviousUser"))
-                {
-                    greeting = "Hello";
-                }
-                else
+                if (!userData.GetProperty<bool>("PreviousUser"))
                 {
                     userData.SetProperty<bool>("PreviousUser", true);
                     await stateClient.BotState.SetUserDataAsync(activity.ChannelId, activity.From.Id, userData);
-                    Activity greet = activity.CreateReply("Hello, I see that you haven't talked to us before. Welcome!");
+                    Activity greet = activity.CreateReply("Hello " + activity.From.Name + ", I see that you haven't talked to us before. Welcome!");
                     await connector.Conversations.ReplyToActivityAsync(greet);
+                    helpFound = true;
                 }
 
                 ConvertLUIS StLUIS = await GetEntityFromLUIS(activity.Text);
@@ -57,7 +51,6 @@ namespace Bot_Application3
                     switch (StLUIS.intents[0].intent)
                     {
                         case "convertcommand":
-                            StockRateString = convertHelp(StLUIS.entities[0].entity);
                             convertFound = true;
                             isCurrencyRequest = false;
                             break;
@@ -80,7 +73,7 @@ namespace Bot_Application3
                     helpReply.Type = "message";
                     helpReply.Attachments = new List<Attachment>();
                     List<CardImage> helpImage = new List<CardImage>();
-                    helpImage.Add(new CardImage(url: "https://s11.postimg.org/jbsib4b4j/commands.png"));
+                    helpImage.Add(new CardImage(url: "https://s3.postimg.org/yewfjbroj/command_Box.png"));
                     HeroCard conversionCard = new HeroCard()
                     {
                         Images = helpImage
@@ -100,7 +93,6 @@ namespace Bot_Application3
                 if (userMessage.ToLower().Contains("update balance"))
                 {
                     List<ContosoTable949> timelines = await AzureManager.AzureManagerInstance.GetTimelines();
-                    endOutput = "";
                     string[] inputs = userMessage.Split(' ');
                     string newBalance = inputs[3];
                     double doubleBalance = Convert.ToDouble(newBalance);
@@ -119,6 +111,24 @@ namespace Bot_Application3
                     isCurrencyRequest = false;
                 }
 
+                if (userMessage.ToLower().Contains("delete"))
+                {
+                    List<ContosoTable949> timelines = await AzureManager.AzureManagerInstance.GetTimelines();
+                    string userName = userMessage.Substring(7);
+                    endOutput = "Sorry, there is no account under that name.";
+                    foreach (ContosoTable949 account in timelines)
+                    {
+                        if (userName.ToLower() == account.Name.ToLower())
+                        {
+                            await AzureManager.AzureManagerInstance.DeleteTimeline(account);
+                            endOutput = "Your account was successfully deleted.";
+
+                        }
+                    }
+
+                    isCurrencyRequest = false;
+                }
+
                 if (userMessage.ToLower().Contains("get"))
                 {
                     List<ContosoTable949> timelines = await AzureManager.AzureManagerInstance.GetTimelines();
@@ -128,7 +138,7 @@ namespace Bot_Application3
                     {
                         if (name == account.Name.ToLower())
                         {
-                            endOutput = "[" + account.Date + "] Name: " + account.Name + ", Balance (in NZD): " + account.Balance;
+                            endOutput = "Name: " + account.Name + ", Balance (in NZD): " + account.Balance;
                         }
                         
                     }
@@ -137,7 +147,7 @@ namespace Bot_Application3
                 }
                 if (userMessage.ToLower().Equals("account"))
                 {
-                    endOutput = "Type: \n\n New <your name>: to create a new account. \n\n Get <your name>: to view your account.";
+                    endOutput = "Type: New/Get/Delete *Your Name* to create/view/delete your account. You can also type Update balance *Your Name* to update your balance. EXAMPLE. New James, Update balance Sam, etc";
                     isCurrencyRequest = false;
                 }
                 if (userMessage.ToLower().Contains("new"))
@@ -176,7 +186,7 @@ namespace Bot_Application3
                     reply.Type = "message";
                     reply.Attachments = new List<Attachment>();
                     List<CardImage> convertImage = new List<CardImage>();
-                    convertImage.Add(new CardImage(url: "https://s16.postimg.org/whosryd4l/8819c8dde4225d105f5ee2204231eeeb.png"));
+                    convertImage.Add(new CardImage(url: "https://s15.postimg.org/630c7wm5n/Untitled_2.png"));
                     ThumbnailCard conversionCard = new ThumbnailCard()
                     {
                         Title = conversion.ToString(),
@@ -195,7 +205,7 @@ namespace Bot_Application3
                     replyToConversation.Type = "message";
                     replyToConversation.Attachments = new List<Attachment>();
                     List<CardImage> cardImages = new List<CardImage>();
-                    cardImages.Add(new CardImage(url: "https://s16.postimg.org/cw2td6g4l/Contoso_Logo.png"));
+                    cardImages.Add(new CardImage(url: "https://s14.postimg.org/9znwwgaw1/Contoso_Logo.png"));
                     List<CardAction> cardButtons = new List<CardAction>();
                     CardAction plButton = new CardAction()
                     {
@@ -277,10 +287,6 @@ namespace Bot_Application3
                 }
             }
             return Data;
-        }
-        private string convertHelp(string StockSymbol)
-        {
-            return StockSymbol;
         }
     }
 }
